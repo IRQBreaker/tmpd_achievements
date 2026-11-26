@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151917">
+  <meta name="description" content="Your personal achievement checklist for the TMPD modded DayZ server. Track every find, every visit, and every bite.">
+  <title>TMPD · Achievement journal</title>
+  <link rel="icon" href="icons/admin-bears.png" type="image/png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="achievements.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#journal">Skip to checklist</a>
+  <header class="topbar shell">
+    <a class="brand" href="./index.html" aria-label="TMPD achievement journal home"><strong>TMPD<span> / </span></strong><span>ACHIEVEMENT JOURNAL</span></a>
+    <button class="quiet-button" id="help-button" type="button">How it works <span aria-hidden="true">?</span></button>
+  </header>
+
+  <div class="shell">
+    <div class="banner"><img src="tmpd-banner.png" alt="TMPD — a survivor looking out over an abandoned town in Chernarus" width="2172" height="724"><span class="banner-tag">DAYZ · SURVIVOR FIELD NOTES</span></div>
+
+    <main id="journal">
+      <section class="intro" aria-labelledby="page-title">
+        <div><p class="eyebrow">THE JOURNEY IS IN THE DETAILS</p><h1 id="page-title">Leave no achievement behind.</h1><p class="muted">Every find. Every place. Every questionable snack.</p></div>
+        <div class="save-indicator" id="save-status" role="status">Progress saved on this device</div>
+      </section>
+
+      <section class="overall-progress" aria-label="Overall achievement progress">
+        <div class="progress-heading"><div><span class="eyebrow">YOUR PROGRESS</span><p><strong id="total-completed">0</strong><span> / <span id="total-count">139</span> achievements</span></p></div><div class="total-percentage" id="total-percent">0<span>%</span></div></div>
+        <progress id="overall-bar" max="139" value="0" aria-label="Total completed achievements"></progress>
+        <div class="progress-caption"><span id="progress-message">A fresh start. Make your first mark.</span><span id="categories-completed">0 / 8 categories complete</span></div>
+      </section>
+
+      <div class="journal-layout">
+        <aside class="sidebar" aria-label="Achievement categories">
+          <div class="sidebar-label eyebrow">YOUR CHECKLISTS <span>8</span></div>
+          <nav id="category-nav" aria-label="Choose a category"></nav>
+          <div class="backup-tools"><p class="eyebrow">KEEP YOUR PROGRESS SAFE</p><p class="muted">Take your journal with you.</p><div><button class="tool-button" id="export-button" type="button">Export backup</button><button class="tool-button" id="import-button" type="button">Import backup</button></div><input type="file" id="import-file" accept=".json,application/json" hidden></div>
+          <button class="reset-button" id="reset-button" type="button">Reset all progress</button>
+        </aside>
+
+        <section class="checklist-panel" aria-labelledby="checklist-title">
+          <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><label class="sr-only" for="search">Search all achievements</label><input id="search" type="search" placeholder="Search all achievements…" autocomplete="off"><kbd aria-hidden="true">/</kbd></div>
+          <div class="checklist-heading"><div><p class="eyebrow" id="category-kicker">COLLECT & COMPLETE</p><h2 id="checklist-title">Admin bears</h2><p class="muted" id="category-description">Find every familiar face in bear form.</p></div><img id="category-art" src="icons/admin-bears.png" alt="" width="88" height="88"></div>
+          <div class="list-toolbar"><div class="filters" role="group" aria-label="Filter achievements"><button type="button" data-filter="all" aria-pressed="true">All <span id="filter-all">16</span></button><button type="button" data-filter="remaining" aria-pressed="false">Remaining <span id="filter-remaining">16</span></button><button type="button" data-filter="completed" aria-pressed="false">Completed <span id="filter-completed">0</span></button></div><span id="list-summary" class="muted">0 / 16 complete</span></div>
+          <div id="checklists"></div>
+          <div id="empty-state" hidden><span aria-hidden="true">○</span><h3 id="empty-title">No achievements found</h3><p class="muted" id="empty-description">Try another search or filter.</p><button type="button" class="tool-button" id="clear-filters">Clear search & filters</button></div>
+          <p class="checklist-note"><span aria-hidden="true">✓</span> Check an achievement when you complete it in game.</p>
+        </section>
+      </div>
+    </main>
+    <footer><span><strong>TMPD</strong> · A little record of a long survival.</span><span>Personal checklist · Unofficial DayZ companion</span></footer>
+  </div>
+
+  <dialog id="help-dialog" aria-labelledby="help-title"><div class="dialog-content"><p class="eyebrow">YOUR SURVIVOR FIELD NOTES</p><h2 id="help-title">A journal that remembers.</h2><p>Check off achievements as you complete them on the server. Use the categories to browse, or search across the entire journal.</p><p>Your progress saves automatically in this browser on this device. It does not sync with DayZ, an account, or other devices.</p><p><strong>Keep a backup.</strong> Clearing browser data, using a private window, moving these files, or changing the site's address can make saved progress unavailable. Export a backup regularly and import it to transfer your progress.</p><p>If browser storage is unavailable, you can still use the checklist and export a backup before closing the page.</p><form method="dialog"><button class="primary-button">Back to the journal</button></form></div></dialog>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title"><div class="dialog-content"><p class="eyebrow">MANAGE YOUR JOURNAL</p><h2 id="confirm-title">Reset all progress?</h2><p id="confirm-description">This will clear every checked achievement on this device. Export a backup first if you want to keep your progress.</p><div class="dialog-actions"><button class="tool-button" id="cancel-confirm" type="button">Cancel</button><button class="primary-button" id="accept-confirm" type="button">Reset progress</button></div></div></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <noscript><p class="noscript">Enable JavaScript to use the achievement checklist and save your progress.</p></noscript>
+</body>
+</html>
