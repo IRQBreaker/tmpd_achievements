@@ -1,20 +1,23 @@
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'tmpd.achievements.v1';
+  const STORAGE_KEY = 'tmpd.achievements.v2';
   const APP_ID = 'tmpd-achievements';
   const categories = window.TMPD_CATEGORIES;
   const $ = id => document.getElementById(id);
   const normalize = text => text.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[’‘]/g, "'").toLowerCase();
-  const slug = text => normalize(text).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const entries = categories.flatMap(category => (category.groups || [{id: 'items', items: category.items}]).flatMap(group =>
-    group.items.map(name => ({
-      id: `${category.id}/${group.id}/${slug(name)}`,
-      name, categoryId: category.id, groupId: group.id,
-      search: normalize(`${category.name} ${group.name || ''} ${name}`)
+    group.items.map(item => ({
+      id: item.id,
+      name: item.name, categoryId: category.id, groupId: group.id,
+      search: normalize(`${category.name} ${group.name || ''} ${item.name}`)
     }))
   ));
   const knownIds = new Set(entries.map(entry => entry.id));
+  const validId = id => typeof id === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(id);
+  if (knownIds.size !== entries.length || entries.some(entry => !validId(entry.id))) {
+    throw new Error('Every achievement must have a unique, permanent ID.');
+  }
   let completed = new Set();
   let selectedCategory = categories[0].id;
   let filter = 'all';
@@ -34,15 +37,16 @@
 
   function decodeProgress(text) {
     const data = JSON.parse(text);
-    if (!data || data.app !== APP_ID || data.version !== 1 || !Array.isArray(data.completed) ||
-        data.completed.length > 10000 || data.completed.some(id => typeof id !== 'string' || !knownIds.has(id))) {
-      throw new Error('This is not a compatible TMPD backup. Choose a JSON file exported by this journal.');
+    if (!data || data.app !== APP_ID || data.version !== 2 || !Array.isArray(data.completed) ||
+        data.completed.length > 10000 || data.completed.some(id => !validId(id))) {
+      throw new Error('Choose a version 2 TMPD backup exported by this journal. Earlier backups are not supported.');
     }
     return {completed: new Set(data.completed), updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : null};
   }
 
   function payload() {
-    return {app: APP_ID, version: 1, updatedAt, completed: entries.filter(entry => completed.has(entry.id)).map(entry => entry.id)};
+    // Keep IDs absent from this checklist so temporarily removed items can return later.
+    return {app: APP_ID, version: 2, updatedAt, completed: [...completed].sort()};
   }
 
   function showToast(message) {
@@ -117,6 +121,7 @@
   }
 
   function updateProgress() {
+    $('category-count').textContent = categories.length;
     let finishedCategories = 0;
     for (const category of categories) {
       const items = entries.filter(entry => entry.categoryId === category.id);
@@ -131,15 +136,16 @@
       bar.value = count;
       if (count === items.length) finishedCategories++;
     }
-    $('total-completed').textContent = completed.size;
+    const totalCompleted = entries.filter(entry => completed.has(entry.id)).length;
+    $('total-completed').textContent = totalCompleted;
     $('total-count').textContent = entries.length;
-    $('total-percent').replaceChildren(document.createTextNode(Math.round(completed.size / entries.length * 100)), element('span', '', '%'));
+    $('total-percent').replaceChildren(document.createTextNode(Math.round(totalCompleted / entries.length * 100)), element('span', '', '%'));
     $('overall-bar').max = entries.length;
-    $('overall-bar').value = completed.size;
+    $('overall-bar').value = totalCompleted;
     $('categories-completed').textContent = `${finishedCategories} / ${categories.length} categories complete`;
-    $('progress-message').textContent = completed.size === 0 ? 'A fresh start. Make your first mark.' :
-      completed.size === entries.length ? 'Every achievement recorded. A journal well travelled.' :
-      `${entries.length - completed.size} more achievements out there. Keep exploring.`;
+    $('progress-message').textContent = totalCompleted === 0 ? 'A fresh start. Make your first mark.' :
+      totalCompleted === entries.length ? 'Every achievement recorded. A journal well travelled.' :
+      `${entries.length - totalCompleted} more achievements out there. Keep exploring.`;
   }
 
   function render() {
@@ -268,9 +274,13 @@
       if (file.size > 1024 * 1024) throw new Error('This file is too large. Choose a TMPD JSON backup smaller than 1 MB.');
       let imported;
       try { imported = decodeProgress(await file.text()); }
-      catch { throw new Error('This is not a compatible TMPD backup. Choose a JSON file exported by this journal.'); }
+      catch { throw new Error('Choose a version 2 TMPD backup exported by this journal. Earlier backups are not supported.'); }
+      const importedCount = [...imported.completed].filter(id => knownIds.has(id)).length;
+      const currentCount = [...completed].filter(id => knownIds.has(id)).length;
+      const unavailableCount = imported.completed.size - importedCount;
       confirmAction('Replace progress with this backup?',
-        `This backup has ${imported.completed.size} of ${entries.length} achievements completed. It will replace your current ${completed.size} completed achievements. Export your current progress first if you want to keep it.`,
+        `This backup has ${importedCount} of ${entries.length} achievements completed. It will replace your current ${currentCount} completed achievements. Export your current progress first if you want to keep it.` +
+          (unavailableCount ? ` ${unavailableCount} saved completion(s) for achievements outside this checklist will also be kept.` : ''),
         'Import backup', () => {
           completed = imported.completed;
           damagedStorage = false;
